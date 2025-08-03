@@ -130,7 +130,7 @@ npm run build:h5
 - [备忘录应用后端API接口文档](./api-md/备忘录应用后端API接口文档.md)
 
 ### API基础信息
-- **服务器地址**: `https://pmfvfknyyvch.sealosbja.site`
+- **服务器地址**: `https://plasmwcfgsbv.sealosbja.site`
 - **API基础路径**: `/api`
 - **数据格式**: JSON
 - **认证方式**: User-Id请求头
