@@ -6,10 +6,20 @@
 				"navigationStyle": "custom"
 			}
 		},
+
 		{
 			"path": "pages/index/index",
 			"style": {
-				"navigationBarTitleText": "备忘录"
+				"navigationBarTitleText": "备忘录",
+				"app-plus": {
+					"titleNView": {
+						"buttons": [{
+							"text": "👤",
+							"fontSize": "22px",
+							"width": "60px"
+						}]
+					}
+				}
 			}
 		},
 		{
@@ -29,6 +39,14 @@
 			"path": "pages/edit/edit",
 			"style": {
 				"navigationBarTitleText": "编辑备忘录"
+			}
+		},
+		{
+			"path": "pages/profile/profile",
+			"style": {
+				"navigationBarTitleText": "个人信息",
+				"navigationBarBackgroundColor": "#667eea",
+				"navigationBarTextStyle": "white"
 			}
 		}
 	],

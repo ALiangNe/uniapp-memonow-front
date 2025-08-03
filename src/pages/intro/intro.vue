@@ -38,29 +38,99 @@
 
 
 
-    <!-- 开始使用按钮 -->
+    <!-- 登录按钮区域 -->
     <view class="action-section">
-      <button class="start-btn" @click="goToMemoList">
-        <text class="btn-text">开始使用</text>
-        <text class="btn-icon">→</text>
+      <!-- 微信登录按钮 -->
+      <button class="wechat-login-btn" @click="handleWechatLogin" :disabled="isLogging">
+        <text class="btn-icon">👤</text>
+        <text class="btn-text">{{ isLogging ? '登录中...' : '微信快速登录' }}</text>
       </button>
 
       <view class="tips">
-        <text class="tips-text">点击开始使用，立即体验快捷备忘录</text>
+        <text class="tips-text">安全登录，数据隔离</text>
       </view>
     </view>
   </view>
 </template>
 
 <script>
+import authManager from '@/utils/auth.js';
+
 export default {
-  methods: {
-    // 跳转到备忘录列表页面
-    goToMemoList() {
-      uni.navigateTo({
-        url: '/pages/index/index'
-      });
+  data() {
+    return {
+      isLogging: false
+    };
+  },
+
+  onLoad() {
+    console.log('引导页加载');
+
+    // 检查用户是否已经登录
+    if (authManager.checkLoginStatus()) {
+      console.log('用户已登录，直接跳转到首页');
+      // 延迟一下让用户看到引导页
+      setTimeout(() => {
+        uni.reLaunch({
+          url: '/pages/index/index'
+        });
+      }, 1000);
     }
+  },
+
+  methods: {
+    /**
+     * 微信登录
+     */
+    async handleWechatLogin() {
+      if (this.isLogging) return;
+
+      try {
+        this.isLogging = true;
+        console.log('开始微信登录...');
+
+        uni.showLoading({
+          title: '登录中...',
+          mask: true
+        });
+
+        const result = await authManager.wechatLogin();
+
+        if (result) {
+          console.log('登录成功:', result);
+          uni.hideLoading();
+
+          uni.showToast({
+            title: '登录成功',
+            icon: 'success',
+            duration: 1500
+          });
+
+          // 延迟跳转，让用户看到成功提示
+          setTimeout(() => {
+            uni.reLaunch({
+              url: '/pages/index/index'
+            });
+          }, 1500);
+        } else {
+          throw new Error('登录失败');
+        }
+      } catch (error) {
+        console.error('微信登录失败:', error);
+        uni.hideLoading();
+
+        uni.showModal({
+          title: '登录失败',
+          content: error.message || '登录过程中出现错误，请重试',
+          showCancel: false,
+          confirmText: '确定'
+        });
+      } finally {
+        this.isLogging = false;
+      }
+    },
+
+
   }
 }
 </script>
@@ -189,51 +259,60 @@ export default {
 
 
 
-/* 开始使用按钮 */
+/* 登录按钮区域 */
 .action-section {
-  margin-top:30rpx;
+  margin-top: 30rpx;
   text-align: center;
 }
 
-.start-btn {
-  width: 60%;
-  max-width: 400rpx;
+/* 微信登录按钮 */
+.wechat-login-btn {
+  width: 70%;
+  max-width: 450rpx;
   height: 100rpx;
-  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  background: linear-gradient(135deg, #07c160 0%, #06ad56 100%);
   border-radius: 50rpx;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10rpx 30rpx rgba(255, 107, 107, 0.3);
-  margin: 0 auto 20rpx auto;
+  box-shadow: 0 10rpx 30rpx rgba(7, 193, 96, 0.3);
+  margin: 0 auto 25rpx auto;
   transition: all 0.3s ease;
 }
 
-.start-btn:active {
+.wechat-login-btn:active {
   transform: translateY(2rpx);
-  box-shadow: 0 5rpx 15rpx rgba(255, 107, 107, 0.3);
+  box-shadow: 0 5rpx 15rpx rgba(7, 193, 96, 0.3);
 }
+
+.wechat-login-btn[disabled] {
+  opacity: 0.6;
+  transform: none;
+}
+
+
 
 .btn-text {
   font-size: 32rpx;
   font-weight: bold;
   color: #fff;
-  margin-right: 12rpx;
+  margin-left: 12rpx;
 }
 
 .btn-icon {
-  font-size: 28rpx;
+  font-size: 32rpx;
   color: #fff;
   font-weight: bold;
 }
 
 .tips {
-  margin-top: 20rpx;
+  margin-top: 25rpx;
 }
 
 .tips-text {
-  font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.4;
 }
 </style>
