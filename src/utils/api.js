@@ -1,5 +1,5 @@
 // API工具类 - 统一管理所有接口调用
-const BASE_URL = 'https://pmfvfknyyvch.sealosbja.site/api';
+const BASE_URL = 'https://plasmwcfgsbv.sealosbja.site/api';
 
 /**
  * 统一的API响应处理函数
