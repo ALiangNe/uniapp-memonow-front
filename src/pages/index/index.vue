@@ -32,6 +32,11 @@
       </view>
     </view>
 
+    <!-- 用户信息按钮 -->
+    <view class="floating-user-btn" @click="goToProfile">
+      <text class="user-icon">👤</text>
+    </view>
+
     <!-- 悬浮添加按钮 -->
     <view class="floating-add-btn" @click="goToAdd">
       <text class="add-icon">+</text>
@@ -40,17 +45,34 @@
 </template>
 
 <script>
-import MemoAPI from '@/utils/api.js';
+import authManager from '@/utils/auth.js';
+import memoAPI from '@/utils/memo-api.js';
 
 export default {
   data() {
     return {
       memos: [],
-      loading: false
+      loading: false,
+      userInfo: null
     }
   },
 
   onLoad() {
+    console.log('首页加载');
+
+    // 检查登录状态
+    if (!authManager.checkLoginStatus()) {
+      console.log('用户未登录，跳转到介绍页');
+      uni.reLaunch({
+        url: '/pages/intro/intro'
+      });
+      return;
+    }
+
+    // 获取用户信息
+    this.userInfo = authManager.getUserInfo();
+    console.log('当前用户:', this.userInfo);
+
     // 页面加载时从API获取数据
     this.loadMemos();
 
@@ -61,6 +83,14 @@ export default {
   },
 
   onShow() {
+    // 检查登录状态
+    if (!authManager.checkLoginStatus()) {
+      uni.reLaunch({
+        url: '/pages/intro/intro'
+      });
+      return;
+    }
+
     // 页面显示时重新加载数据（从其他页面返回时刷新）
     this.loadMemos();
   },
@@ -83,13 +113,14 @@ export default {
       });
 
       try {
-        const data = await MemoAPI.getMemos();
-        if (data) {
-          this.memos = data;
+        const response = await memoAPI.getList();
+        if (response && response.data) {
+          this.memos = response.data;
+          console.log('加载备忘录成功:', response.data.length, '条');
 
           // 调试：打印第一个备忘录的时间信息
-          if (data.length > 0) {
-            const firstMemo = data[0];
+          if (response.data.length > 0) {
+            const firstMemo = response.data[0];
             console.log('=== 时间调试信息 ===');
             console.log('原始updateTime:', firstMemo.updateTime);
             console.log('原始createTime:', firstMemo.createTime);
@@ -102,8 +133,17 @@ export default {
         }
       } catch (error) {
         console.error('加载备忘录失败:', error);
+
+        // 如果是认证错误，跳转到介绍页
+        if (error.message && error.message.includes('请先登录')) {
+          uni.reLaunch({
+            url: '/pages/intro/intro'
+          });
+          return;
+        }
+
         uni.showToast({
-          title: '加载失败，请重试',
+          title: error.message || '加载失败，请重试',
           icon: 'none'
         });
       } finally {
@@ -116,6 +156,13 @@ export default {
     goToAdd() {
       uni.navigateTo({
         url: '/pages/add/add'
+      });
+    },
+
+    // 跳转到用户信息页面
+    goToProfile() {
+      uni.navigateTo({
+        url: '/pages/profile/profile'
       });
     },
 
@@ -318,6 +365,33 @@ export default {
   padding: 2rpx 8rpx;
   border-radius: 8rpx;
   border: 1rpx solid rgba(0, 122, 255, 0.2);
+}
+
+/* 悬浮用户信息按钮 */
+.floating-user-btn {
+  position: fixed;
+  left: 40rpx;
+  bottom: 40rpx;
+  width: 100rpx;
+  height: 100rpx;
+  background-color: #667eea;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 20rpx rgba(102, 126, 234, 0.3);
+  z-index: 999;
+  transition: all 0.3s ease;
+}
+
+.floating-user-btn:active {
+  transform: scale(0.9);
+}
+
+.user-icon {
+  font-size: 40rpx;
+  color: #fff;
+  line-height: 1;
 }
 
 /* 悬浮添加按钮 */

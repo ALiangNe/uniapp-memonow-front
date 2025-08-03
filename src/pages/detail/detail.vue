@@ -49,7 +49,8 @@
 </template>
 
 <script>
-import MemoAPI from '@/utils/api.js';
+import authManager from '@/utils/auth.js';
+import memoAPI from '@/utils/memo-api.js';
 
 export default {
   data() {
@@ -69,6 +70,17 @@ export default {
   },
 
   onLoad(options) {
+    console.log('详情页面加载');
+
+    // 检查登录状态
+    if (!authManager.checkLoginStatus()) {
+      console.log('用户未登录，跳转到介绍页');
+      uni.reLaunch({
+        url: '/pages/intro/intro'
+      });
+      return;
+    }
+
     // 获取传递的备忘录ID
     this.memoId = options.id;
     this.loadMemoDetail();
@@ -87,17 +99,30 @@ export default {
       });
 
       try {
-        const data = await MemoAPI.getMemoDetail(this.memoId);
-        if (data) {
-          this.memo = data;
+        const response = await memoAPI.getDetail(this.memoId);
+        if (response && response.data) {
+          this.memo = response.data;
+          console.log('加载备忘录详情成功:', response.data);
         } else {
-          // API已经显示了错误提示，直接返回
+          uni.showToast({
+            title: '备忘录不存在',
+            icon: 'none'
+          });
           this.goBack();
         }
       } catch (error) {
         console.error('加载备忘录详情失败:', error);
+
+        // 如果是认证错误，跳转到介绍页
+        if (error.message && error.message.includes('请先登录')) {
+          uni.reLaunch({
+            url: '/pages/intro/intro'
+          });
+          return;
+        }
+
         uni.showToast({
-          title: '加载失败，请重试',
+          title: error.message || '加载失败，请重试',
           icon: 'none'
         });
         this.goBack();
@@ -191,12 +216,14 @@ export default {
     // 执行删除操作（后台执行）
     async performDelete() {
       try {
-        const success = await MemoAPI.deleteMemo(this.memoId);
+        const response = await memoAPI.delete(this.memoId);
 
         // 隐藏加载提示
         uni.hideLoading();
 
-        if (success) {
+        if (response) {
+          console.log('删除备忘录成功');
+
           // 删除成功，再次刷新列表确保数据同步
           uni.$emit('refreshMemoList');
 
@@ -206,22 +233,30 @@ export default {
             icon: 'success',
             duration: 1500
           });
-        } else {
-          // 删除失败，显示错误提示
-          uni.showToast({
-            title: '删除失败，请重试',
-            icon: 'none',
-            duration: 2000
-          });
-
-          // 刷新列表以恢复数据显示
-          uni.$emit('refreshMemoList');
         }
       } catch (error) {
         console.error('删除备忘录失败:', error);
 
         // 隐藏加载提示
         uni.hideLoading();
+
+        // 如果是认证错误，跳转到介绍页
+        if (error.message && error.message.includes('请先登录')) {
+          uni.reLaunch({
+            url: '/pages/intro/intro'
+          });
+          return;
+        }
+
+        // 删除失败，显示错误提示
+        uni.showToast({
+          title: error.message || '删除失败，请重试',
+          icon: 'none',
+          duration: 2000
+        });
+
+        // 刷新列表以恢复数据显示
+        uni.$emit('refreshMemoList');
 
         // 显示错误提示
         uni.showToast({

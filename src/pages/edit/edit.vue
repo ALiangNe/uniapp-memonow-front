@@ -38,7 +38,8 @@
 </template>
 
 <script>
-import MemoAPI from '@/utils/api.js';
+import authManager from '@/utils/auth.js';
+import memoAPI from '@/utils/memo-api.js';
 
 export default {
   data() {
@@ -58,6 +59,17 @@ export default {
   },
   
   onLoad(options) {
+    console.log('编辑页面加载');
+
+    // 检查登录状态
+    if (!authManager.checkLoginStatus()) {
+      console.log('用户未登录，跳转到介绍页');
+      uni.reLaunch({
+        url: '/pages/intro/intro'
+      });
+      return;
+    }
+
     // 获取传递的备忘录ID
     this.memoId = options.id;
     this.loadMemoDetail();
@@ -76,12 +88,13 @@ export default {
       });
 
       try {
-        const data = await MemoAPI.getMemoDetail(this.memoId);
-        if (data) {
+        const response = await memoAPI.getDetail(this.memoId);
+        if (response && response.data) {
           this.memo = {
-            title: data.title,
-            content: data.content
+            title: response.data.title,
+            content: response.data.content
           };
+          console.log('加载编辑数据成功:', response.data);
           // 保存原始数据，用于检测是否有修改
           this.originalMemo = {
             title: data.title,
@@ -143,12 +156,21 @@ export default {
       });
 
       try {
-        const data = await MemoAPI.updateMemo(this.memoId, this.memo.title, this.memo.content);
-        if (data) {
+        const response = await memoAPI.update(this.memoId, {
+          title: this.memo.title,
+          content: this.memo.content,
+          priority: 0,
+          status: 0,
+          tags: []
+        });
+
+        if (response && response.data) {
+          console.log('更新备忘录成功:', response.data);
+
           // 更新原始数据，避免返回时提示未保存
           this.originalMemo = {
-            title: data.title,
-            content: data.content
+            title: response.data.title,
+            content: response.data.content
           };
 
           // 修改成功后直接返回列表页面（跳过详情页）
@@ -182,6 +204,19 @@ export default {
         }
       } catch (error) {
         console.error('更新备忘录失败:', error);
+
+        // 如果是认证错误，跳转到介绍页
+        if (error.message && error.message.includes('请先登录')) {
+          uni.reLaunch({
+            url: '/pages/intro/intro'
+          });
+          return;
+        }
+
+        uni.showToast({
+          title: error.message || '更新失败，请重试',
+          icon: 'none'
+        });
       } finally {
         this.updating = false;
         uni.hideLoading();

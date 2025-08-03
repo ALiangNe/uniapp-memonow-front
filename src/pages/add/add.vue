@@ -34,7 +34,8 @@
 </template>
 
 <script>
-import MemoAPI from '@/utils/api.js';
+import authManager from '@/utils/auth.js';
+import memoAPI from '@/utils/memo-api.js';
 
 export default {
   data() {
@@ -44,6 +45,19 @@ export default {
         content: ''
       },
       saving: false
+    }
+  },
+
+  onLoad() {
+    console.log('添加页面加载');
+
+    // 检查登录状态
+    if (!authManager.checkLoginStatus()) {
+      console.log('用户未登录，跳转到介绍页');
+      uni.reLaunch({
+        url: '/pages/intro/intro'
+      });
+      return;
     }
   },
 
@@ -77,8 +91,23 @@ export default {
       });
 
       try {
-        const data = await MemoAPI.createMemo(this.memo.title, this.memo.content);
-        if (data) {
+        const response = await memoAPI.create({
+          title: this.memo.title,
+          content: this.memo.content,
+          priority: 0,
+          status: 0,
+          tags: []
+        });
+
+        if (response && response.data) {
+          console.log('创建备忘录成功:', response.data);
+
+          uni.showToast({
+            title: '保存成功',
+            icon: 'success',
+            duration: 1500
+          });
+
           // 延迟返回，让用户看到成功提示
           setTimeout(() => {
             this.goBack();
@@ -86,6 +115,19 @@ export default {
         }
       } catch (error) {
         console.error('保存备忘录失败:', error);
+
+        // 如果是认证错误，跳转到介绍页
+        if (error.message && error.message.includes('请先登录')) {
+          uni.reLaunch({
+            url: '/pages/intro/intro'
+          });
+          return;
+        }
+
+        uni.showToast({
+          title: error.message || '保存失败，请重试',
+          icon: 'none'
+        });
       } finally {
         this.saving = false;
         uni.hideLoading();
