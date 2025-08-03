@@ -256,36 +256,61 @@ export default {
      */
     formatTime(timeStr) {
       if (!timeStr) return '未知';
-      
+
       try {
-        const date = new Date(timeStr);
+        // 解析时间
+        let date = new Date(timeStr);
         const now = new Date();
-        const diff = now - date;
-        
+
+        // 检查日期是否有效
+        if (isNaN(date.getTime())) {
+          console.error('无效的时间格式:', timeStr);
+          return '格式错误';
+        }
+
+        // 如果API返回的是UTC时间但服务器时区有问题，手动调整
+        // 检查时差是否接近8小时（可能的时区问题）
+        const diff = now.getTime() - date.getTime();
+        const hoursDiff = diff / (60 * 60 * 1000);
+
+        // 如果时差在7-9小时之间，可能是时区问题，尝试调整
+        if (hoursDiff >= 7 && hoursDiff <= 9) {
+          console.log('个人信息页检测到可能的时区问题，调整时间:', timeStr);
+          // 将时间向前调整8小时（UTC+8）
+          date = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+        }
+
+        // 重新计算时间差（使用调整后的时间）
+        const adjustedDiff = now.getTime() - date.getTime();
+
         // 小于1分钟
-        if (diff < 60000) {
+        if (adjustedDiff < 60000) {
           return '刚刚';
         }
-        
+
         // 小于1小时
-        if (diff < 3600000) {
-          return Math.floor(diff / 60000) + '分钟前';
+        if (adjustedDiff < 3600000) {
+          return Math.floor(adjustedDiff / 60000) + '分钟前';
         }
-        
+
         // 小于1天
-        if (diff < 86400000) {
-          return Math.floor(diff / 3600000) + '小时前';
+        if (adjustedDiff < 86400000) {
+          return Math.floor(adjustedDiff / 3600000) + '小时前';
         }
-        
+
         // 小于7天
-        if (diff < 604800000) {
-          return Math.floor(diff / 86400000) + '天前';
+        if (adjustedDiff < 604800000) {
+          return Math.floor(adjustedDiff / 86400000) + '天前';
         }
-        
+
         // 超过7天显示具体日期
-        return date.toLocaleDateString();
+        return date.toLocaleDateString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
       } catch (error) {
-        console.error('时间格式化失败:', error);
+        console.error('时间格式化失败:', error, '原始时间:', timeStr);
         return '格式错误';
       }
     }
