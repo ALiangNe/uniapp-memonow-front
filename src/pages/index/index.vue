@@ -1,18 +1,45 @@
 <template>
   <view class="container">
+    <!-- 搜索框 -->
+    <view class="search-container">
+      <view class="search-box">
+        <view class="search-icon">🔍</view>
+        <input
+          class="search-input"
+          type="text"
+          placeholder="搜索备忘录标题或内容..."
+          v-model="searchKeyword"
+          @input="onSearchInput"
+          @confirm="onSearchConfirm"
+          confirm-type="search"
+        />
+        <view
+          class="clear-icon"
+          v-if="searchKeyword"
+          @click="clearSearch"
+        >✕</view>
+      </view>
+    </view>
+
     <!-- 备忘录网格布局 -->
     <view class="memo-grid">
       <!-- 空状态 -->
-      <view v-if="memos.length === 0" class="empty-state">
+      <view v-if="filteredMemos.length === 0 && !searchKeyword" class="empty-state">
         <text class="empty-text">暂无备忘录</text>
         <text class="empty-tip">点击右下角 + 号添加第一个备忘录</text>
+      </view>
+
+      <!-- 搜索无结果状态 -->
+      <view v-else-if="filteredMemos.length === 0 && searchKeyword" class="empty-state">
+        <text class="empty-text">🔍 未找到相关备忘录</text>
+        <text class="empty-tip">尝试使用其他关键词搜索</text>
       </view>
 
       <!-- 备忘录卡片网格 -->
       <view v-else class="grid-container">
         <view
           class="memo-card"
-          v-for="memo in memos"
+          v-for="memo in filteredMemos"
           :key="memo.id"
           @click="goToDetail(memo.id)"
         >
@@ -53,7 +80,29 @@ export default {
     return {
       memos: [],
       loading: false,
-      userInfo: null
+      userInfo: null,
+      searchKeyword: '', // 搜索关键词
+      searchTimer: null // 搜索防抖定时器
+    }
+  },
+
+  computed: {
+    // 过滤后的备忘录列表
+    filteredMemos() {
+      if (!this.searchKeyword.trim()) {
+        return this.memos;
+      }
+
+      const keyword = this.searchKeyword.toLowerCase().trim();
+      return this.memos.filter(memo => {
+        const title = (memo.title || '').toLowerCase();
+        const content = (memo.content || '').toLowerCase();
+        const tags = (memo.tags || []).join(' ').toLowerCase();
+
+        return title.includes(keyword) ||
+               content.includes(keyword) ||
+               tags.includes(keyword);
+      });
     }
   },
 
@@ -173,6 +222,60 @@ export default {
       });
     },
 
+    // 搜索输入事件（防抖处理）
+    onSearchInput(e) {
+      const value = e.detail.value;
+      this.searchKeyword = value;
+
+      // 清除之前的定时器
+      if (this.searchTimer) {
+        clearTimeout(this.searchTimer);
+      }
+
+      // 设置新的定时器，300ms后执行搜索
+      this.searchTimer = setTimeout(() => {
+        this.performSearch();
+      }, 300);
+    },
+
+    // 搜索确认事件
+    onSearchConfirm(e) {
+      this.searchKeyword = e.detail.value;
+      this.performSearch();
+    },
+
+    // 执行搜索
+    performSearch() {
+      const keyword = this.searchKeyword.trim();
+
+      if (keyword) {
+        console.log('搜索关键词:', keyword);
+        console.log('搜索结果数量:', this.filteredMemos.length);
+
+        // 可以在这里添加搜索统计或其他逻辑
+        if (this.filteredMemos.length === 0) {
+          uni.showToast({
+            title: '未找到相关备忘录',
+            icon: 'none',
+            duration: 1500
+          });
+        }
+      }
+    },
+
+    // 清空搜索
+    clearSearch() {
+      this.searchKeyword = '';
+
+      // 清除定时器
+      if (this.searchTimer) {
+        clearTimeout(this.searchTimer);
+        this.searchTimer = null;
+      }
+
+      console.log('清空搜索，显示所有备忘录');
+    },
+
     // 格式化时间
     formatTime(timeStr) {
       try {
@@ -255,12 +358,71 @@ export default {
   min-height: 100vh;
   background-color: #f5f5f5;
   position: relative;
-  padding: 20rpx;
+  padding: 0;
+}
+
+/* 搜索框样式 */
+.search-container {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: #f5f5f5;
+  padding: 20rpx 30rpx 10rpx 30rpx;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  border-radius: 50rpx;
+  padding: 0 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  height: 80rpx;
+}
+
+.search-icon {
+  font-size: 32rpx;
+  color: #999;
+  margin-right: 20rpx;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+  height: 80rpx;
+  line-height: 80rpx;
+}
+
+.search-input::placeholder {
+  color: #999;
+  font-size: 28rpx;
+}
+
+.clear-icon {
+  font-size: 28rpx;
+  color: #999;
+  margin-left: 20rpx;
+  padding: 10rpx;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.clear-icon:active {
+  background-color: #e0e0e0;
+  transform: scale(0.95);
 }
 
 /* 备忘录网格容器 */
 .memo-grid {
   width: 100%;
+  padding: 0 20rpx 20rpx 20rpx;
 }
 
 /* 空状态样式 */
