@@ -23,30 +23,13 @@ class AuthManager {
       }
       console.log('获取微信code成功:', loginRes.code);
 
-      // 2. 尝试获取用户信息（可选）
-      let userInfo = {};
-      try {
-        const userInfoRes = await this.wxGetUserProfile();
-        userInfo = {
-          nickname: userInfoRes.userInfo.nickName,
-          avatarUrl: userInfoRes.userInfo.avatarUrl
-        };
-        console.log('获取用户信息成功:', userInfo);
-      } catch (error) {
-        console.log('用户拒绝授权用户信息，使用默认信息');
-        userInfo = {
-          nickname: '微信用户',
-          avatarUrl: ''
-        };
-      }
-
-      // 3. 调用后端登录接口
+      // 2. 调用后端登录接口（不发送昵称和头像，让服务器使用已保存的信息）
       const response = await this.request({
         url: '/api/auth/wechat-login',
         method: 'POST',
         data: {
-          code: loginRes.code,
-          ...userInfo
+          code: loginRes.code
+          // 不再发送默认的nickname和avatarUrl，避免覆盖服务器已保存的用户信息
         },
         needAuth: false // 登录接口不需要User-Id
       });
@@ -154,18 +137,7 @@ class AuthManager {
     });
   }
 
-  /**
-   * 微信获取用户信息Promise封装
-   */
-  wxGetUserProfile() {
-    return new Promise((resolve, reject) => {
-      uni.getUserProfile({
-        desc: '用于完善用户资料',
-        success: resolve,
-        fail: reject
-      });
-    });
-  }
+
 
   /**
    * 统一请求方法
