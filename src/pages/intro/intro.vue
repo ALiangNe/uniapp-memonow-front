@@ -48,6 +48,7 @@
 
       <view class="tips">
         <text class="tips-text">安全登录，数据隔离</text>
+        <text class="tips-text">登录后可在个人信息页面设置头像和昵称</text>
       </view>
     </view>
   </view>
@@ -308,11 +309,15 @@ export default {
 
 .tips {
   margin-top: 25rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
 }
 
 .tips-text {
   font-size: 26rpx;
   color: rgba(255, 255, 255, 0.8);
   line-height: 1.4;
+  text-align: center;
 }
 </style>
