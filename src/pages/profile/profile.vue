@@ -3,12 +3,47 @@
     <!-- 用户信息卡片 -->
     <view class="user-card">
       <view class="avatar-section">
-        <image 
-          class="avatar" 
-          :src="userInfo.avatarUrl || '/static/default-avatar.png'" 
-          mode="aspectFill"
-        ></image>
-        <text class="nickname">{{ userInfo.nickname || '用户' }}</text>
+        <!-- 头像选择按钮 -->
+        <button
+          class="avatar-wrapper"
+          open-type="chooseAvatar"
+          @chooseavatar="onChooseAvatar"
+          :disabled="isUpdating"
+        >
+          <image
+            class="avatar"
+            :src="currentAvatarUrl || '/static/default-avatar.svg'"
+            mode="aspectFill"
+          ></image>
+          <view class="avatar-edit-hint">
+            <text class="edit-icon">📷</text>
+          </view>
+        </button>
+
+        <!-- 昵称编辑表单 -->
+        <form @submit="onSubmitNickname">
+          <view class="nickname-section">
+            <input
+              class="nickname-input"
+              type="nickname"
+              :value="currentNickname"
+              @input="onNicknameInput"
+              @blur="onNicknameBlur"
+              placeholder="请输入昵称"
+              maxlength="20"
+              :disabled="isUpdating"
+            />
+            <button
+              class="save-nickname-btn"
+              form-type="submit"
+              :disabled="!hasNicknameChanged || isUpdating"
+              v-if="hasNicknameChanged"
+            >
+              保存
+            </button>
+          </view>
+        </form>
+
         <text class="user-type">{{ getUserTypeText(userInfo.userType) }}</text>
       </view>
       
@@ -75,7 +110,15 @@ export default {
     return {
       userInfo: {},
       stats: {},
-      loading: false
+      loading: false,
+      // 头像和昵称编辑相关
+      currentAvatarUrl: '',
+      currentNickname: '',
+      originalNickname: '',
+      hasNicknameChanged: false,
+      isUpdating: false,
+      // 默认头像URL
+      defaultAvatarUrl: 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'
     };
   },
 
@@ -109,6 +152,7 @@ export default {
       try {
         // 先从本地获取基本信息，避免页面空白
         this.userInfo = authManager.getUserInfo() || {};
+        this.initializeEditableData();
 
         // 从服务器获取最新的用户信息（包括最新的活跃时间）
         const response = await memoAPI.getUserProfile();
@@ -117,11 +161,14 @@ export default {
           // 更新本地存储
           uni.setStorageSync('userInfo', response.data);
           authManager.userInfo = response.data;
+          // 重新初始化编辑数据
+          this.initializeEditableData();
         }
       } catch (error) {
         console.error('获取用户信息失败:', error);
         // 如果获取失败，使用本地存储的信息
         this.userInfo = authManager.getUserInfo() || {};
+        this.initializeEditableData();
 
         if (error.message && error.message.includes('请先登录')) {
           uni.reLaunch({
@@ -133,6 +180,16 @@ export default {
 
       // 加载统计数据
       await this.loadStats();
+    },
+
+    /**
+     * 初始化可编辑数据
+     */
+    initializeEditableData() {
+      this.currentAvatarUrl = this.userInfo.avatarUrl || '';
+      this.currentNickname = this.userInfo.nickname || '';
+      this.originalNickname = this.userInfo.nickname || '';
+      this.hasNicknameChanged = false;
     },
 
     /**
@@ -206,6 +263,137 @@ export default {
         });
       } finally {
         this.loading = false;
+      }
+    },
+
+    /**
+     * 选择头像回调
+     */
+    async onChooseAvatar(e) {
+      const { avatarUrl } = e.detail;
+      console.log('用户选择了新头像:', avatarUrl);
+
+      if (!avatarUrl) {
+        console.log('头像选择被取消或失败');
+        return;
+      }
+
+      try {
+        this.isUpdating = true;
+        uni.showLoading({
+          title: '更新头像中...',
+          mask: true
+        });
+
+        // 更新头像到服务器
+        const response = await memoAPI.updateUserProfile({
+          avatarUrl: avatarUrl,
+          nickname: this.currentNickname
+        });
+
+        if (response && response.data) {
+          // 更新本地数据
+          this.currentAvatarUrl = avatarUrl;
+          this.userInfo.avatarUrl = avatarUrl;
+
+          // 更新本地存储和认证管理器
+          uni.setStorageSync('userInfo', response.data);
+          authManager.userInfo = response.data;
+
+          uni.hideLoading();
+          uni.showToast({
+            title: '头像更新成功',
+            icon: 'success'
+          });
+        }
+      } catch (error) {
+        console.error('更新头像失败:', error);
+        uni.hideLoading();
+        uni.showToast({
+          title: error.message || '头像更新失败',
+          icon: 'none'
+        });
+      } finally {
+        this.isUpdating = false;
+      }
+    },
+
+    /**
+     * 昵称输入事件
+     */
+    onNicknameInput(e) {
+      const value = e.detail.value.trim();
+      this.currentNickname = value;
+      this.hasNicknameChanged = value !== this.originalNickname && value.length > 0;
+    },
+
+    /**
+     * 昵称失焦事件
+     */
+    onNicknameBlur(e) {
+      const value = e.detail.value.trim();
+      this.currentNickname = value;
+      this.hasNicknameChanged = value !== this.originalNickname && value.length > 0;
+    },
+
+    /**
+     * 提交昵称表单
+     */
+    async onSubmitNickname(e) {
+      const nickname = e.detail.value.nickname || this.currentNickname;
+
+      if (!nickname || nickname.trim().length === 0) {
+        uni.showToast({
+          title: '昵称不能为空',
+          icon: 'none'
+        });
+        return;
+      }
+
+      if (nickname === this.originalNickname) {
+        this.hasNicknameChanged = false;
+        return;
+      }
+
+      try {
+        this.isUpdating = true;
+        uni.showLoading({
+          title: '更新昵称中...',
+          mask: true
+        });
+
+        // 更新昵称到服务器
+        const response = await memoAPI.updateUserProfile({
+          nickname: nickname.trim(),
+          avatarUrl: this.currentAvatarUrl
+        });
+
+        if (response && response.data) {
+          // 更新本地数据
+          this.currentNickname = nickname.trim();
+          this.originalNickname = nickname.trim();
+          this.userInfo.nickname = nickname.trim();
+          this.hasNicknameChanged = false;
+
+          // 更新本地存储和认证管理器
+          uni.setStorageSync('userInfo', response.data);
+          authManager.userInfo = response.data;
+
+          uni.hideLoading();
+          uni.showToast({
+            title: '昵称更新成功',
+            icon: 'success'
+          });
+        }
+      } catch (error) {
+        console.error('更新昵称失败:', error);
+        uni.hideLoading();
+        uni.showToast({
+          title: error.message || '昵称更新失败',
+          icon: 'none'
+        });
+      } finally {
+        this.isUpdating = false;
       }
     },
 
@@ -340,20 +528,88 @@ export default {
   border-bottom: 2rpx solid #f0f0f0;
 }
 
+/* 头像选择按钮 */
+.avatar-wrapper {
+  position: relative;
+  display: inline-block;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin-bottom: 20rpx;
+}
+
 .avatar {
   width: 120rpx;
   height: 120rpx;
   border-radius: 60rpx;
-  margin-bottom: 20rpx;
   border: 4rpx solid #f0f0f0;
+  display: block;
 }
 
-.nickname {
-  display: block;
+.avatar-edit-hint {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 40rpx;
+  height: 40rpx;
+  background: #667eea;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3rpx solid white;
+}
+
+.edit-icon {
+  font-size: 20rpx;
+  color: white;
+}
+
+/* 昵称编辑区域 */
+.nickname-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20rpx;
+  gap: 20rpx;
+}
+
+.nickname-input {
   font-size: 36rpx;
   font-weight: bold;
   color: #333;
-  margin-bottom: 10rpx;
+  text-align: center;
+  border: none;
+  background: transparent;
+  min-width: 200rpx;
+  padding: 10rpx 20rpx;
+  border-radius: 10rpx;
+  transition: all 0.3s ease;
+}
+
+.nickname-input:focus {
+  background: #f8f9fa;
+  outline: none;
+}
+
+.save-nickname-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  min-width: 80rpx;
+  height: 40rpx;
+  line-height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.save-nickname-btn:disabled {
+  background: #ccc;
+  color: #999;
 }
 
 .user-type {
