@@ -1,5 +1,19 @@
 <template>
   <view class="profile-container">
+    <!-- 顶部装饰区域 -->
+    <view class="header-section">
+      <view class="header-decoration">
+        <view class="decoration-circle circle-1"></view>
+        <view class="decoration-circle circle-2"></view>
+        <view class="decoration-circle circle-3"></view>
+      </view>
+      <view class="header-content">
+        <view class="header-icon">👤</view>
+        <text class="header-title">个人中心</text>
+        <text class="header-subtitle">管理你的账户信息</text>
+      </view>
+    </view>
+
     <!-- 用户信息卡片 -->
     <view class="user-card">
       <view class="avatar-section">
@@ -43,21 +57,28 @@
             </button>
           </view>
         </form>
-
-        <text class="user-type">{{ getUserTypeText(userInfo.userType) }}</text>
       </view>
       
       <view class="info-section">
         <view class="info-item">
-          <text class="info-label">用户ID</text>
-          <text class="info-value">{{ userInfo.userId }}</text>
+          <view class="info-label-container">
+            <view class="info-icon">🆔</view>
+            <text class="info-label">用户ID</text>
+          </view>
+          <text class="info-value user-id-value" @click="copyUserId">{{ formatUserId(userInfo.userId) }}</text>
         </view>
         <view class="info-item">
-          <text class="info-label">注册时间</text>
+          <view class="info-label-container">
+            <view class="info-icon">📅</view>
+            <text class="info-label">注册时间</text>
+          </view>
           <text class="info-value">{{ formatTime(userInfo.createdTime) }}</text>
         </view>
         <view class="info-item">
-          <text class="info-label">最后活跃</text>
+          <view class="info-label-container">
+            <view class="info-icon">⏰</view>
+            <text class="info-label">最后活跃</text>
+          </view>
           <text class="info-value">{{ formatTime(userInfo.lastActiveTime) }}</text>
         </view>
       </view>
@@ -65,21 +86,28 @@
 
     <!-- 统计信息 -->
     <view class="stats-card">
-      <text class="card-title">数据统计</text>
+      <view class="card-title-container">
+        <view class="card-title-icon">📊</view>
+        <text class="card-title">数据统计</text>
+      </view>
       <view class="stats-grid">
-        <view class="stat-item">
+        <view class="stat-item total">
+          <view class="stat-icon">📝</view>
           <text class="stat-number">{{ stats.totalMemos || 0 }}</text>
           <text class="stat-label">总备忘录</text>
         </view>
-        <view class="stat-item">
+        <view class="stat-item completed">
+          <view class="stat-icon">✅</view>
           <text class="stat-number">{{ stats.completedMemos || 0 }}</text>
           <text class="stat-label">已完成</text>
         </view>
-        <view class="stat-item">
+        <view class="stat-item pending">
+          <view class="stat-icon">⏳</view>
           <text class="stat-number">{{ stats.pendingMemos || 0 }}</text>
           <text class="stat-label">待完成</text>
         </view>
-        <view class="stat-item">
+        <view class="stat-item urgent">
+          <view class="stat-icon">🔥</view>
           <text class="stat-number">{{ stats.urgentMemos || 0 }}</text>
           <text class="stat-label">紧急</text>
         </view>
@@ -92,12 +120,13 @@
         <text class="btn-icon">🔄</text>
         <text class="btn-text">{{ loading ? '刷新中...' : '刷新数据' }}</text>
       </button>
-      
+
       <button class="action-btn logout-btn" @click="handleLogout">
-        <text class="btn-icon">🚪</text>
+        <text class="btn-icon">👋</text>
         <text class="btn-text">退出登录</text>
       </button>
     </view>
+
   </view>
 </template>
 
@@ -426,17 +455,56 @@ export default {
       });
     },
 
+
+
+
+
     /**
-     * 获取用户类型文本
+     * 格式化用户ID显示（首尾显示，中间省略）
      */
-    getUserTypeText(userType) {
-      const typeMap = {
-        'wx': '微信用户',
-        'h5': 'H5用户',
-        'app': 'App用户',
-        'other': '其他用户'
-      };
-      return typeMap[userType] || '未知用户';
+    formatUserId(userId) {
+      if (!userId) return '';
+
+      // 如果用户ID长度小于等于25个字符，直接显示
+      if (userId.length <= 25) {
+        return userId;
+      }
+
+      // 显示前10个字符 + ... + 后10个字符
+      const start = userId.substring(0, 10);
+      const end = userId.substring(userId.length - 10);
+      return `${start}...${end}`;
+    },
+
+    /**
+     * 复制用户ID
+     */
+    copyUserId() {
+      const userId = this.userInfo.userId;
+      if (!userId) {
+        uni.showToast({
+          title: '用户ID为空',
+          icon: 'none'
+        });
+        return;
+      }
+
+      // 使用uni-app的复制API
+      uni.setClipboardData({
+        data: userId,
+        success: () => {
+          uni.showToast({
+            title: '用户ID已复制',
+            icon: 'success'
+          });
+        },
+        fail: () => {
+          uni.showToast({
+            title: '复制失败',
+            icon: 'none'
+          });
+        }
+      });
     },
 
     /**
@@ -509,16 +577,128 @@ export default {
 <style scoped>
 .profile-container {
   min-height: 100vh;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 0;
+}
+
+/* 顶部装饰区域 */
+.header-section {
+  position: relative;
+  padding: 60rpx 40rpx 40rpx;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 40rpx;
+  border-radius: 0 0 50rpx 50rpx;
+  margin-bottom: 30rpx;
+  overflow: hidden;
+}
+
+.header-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.decoration-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  animation: float 6s ease-in-out infinite;
+}
+
+.circle-1 {
+  width: 120rpx;
+  height: 120rpx;
+  top: 20rpx;
+  right: 60rpx;
+  animation-delay: 0s;
+}
+
+.circle-2 {
+  width: 80rpx;
+  height: 80rpx;
+  top: 120rpx;
+  right: 200rpx;
+  animation-delay: 2s;
+}
+
+.circle-3 {
+  width: 60rpx;
+  height: 60rpx;
+  top: 60rpx;
+  left: 80rpx;
+  animation-delay: 4s;
+}
+
+.header-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.header-icon {
+  font-size: 60rpx;
+  margin-bottom: 20rpx;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+.header-title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 10rpx;
+}
+
+.header-subtitle {
+  display: block;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 浮动动画 */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20rpx) rotate(180deg);
+  }
+}
+
+/* 弹跳动画 */
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10rpx);
+  }
+  60% {
+    transform: translateY(-5rpx);
+  }
 }
 
 .user-card {
   background: white;
-  border-radius: 20rpx;
+  border-radius: 25rpx;
   padding: 40rpx;
-  margin-bottom: 30rpx;
-  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.1);
+  margin: 0 30rpx 30rpx 30rpx;
+  box-shadow: 0 8rpx 25rpx rgba(102, 126, 234, 0.15);
+  border: 2rpx solid rgba(102, 126, 234, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.user-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4rpx;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
 }
 
 .avatar-section {
@@ -539,25 +719,32 @@ export default {
 }
 
 .avatar {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 60rpx;
-  border: 4rpx solid #f0f0f0;
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 70rpx;
+  border: 4rpx solid rgba(102, 126, 234, 0.2);
   display: block;
+  transition: all 0.3s ease;
+}
+
+.avatar-wrapper:active .avatar {
+  transform: scale(0.95);
+  border-color: rgba(102, 126, 234, 0.4);
 }
 
 .avatar-edit-hint {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 40rpx;
-  height: 40rpx;
-  background: #667eea;
-  border-radius: 20rpx;
+  width: 44rpx;
+  height: 44rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 22rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 3rpx solid white;
+  box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.3);
 }
 
 .edit-icon {
@@ -612,35 +799,45 @@ export default {
   color: #999;
 }
 
-.user-type {
-  display: block;
-  font-size: 24rpx;
-  color: #999;
-  background: #f0f0f0;
-  padding: 8rpx 16rpx;
-  border-radius: 12rpx;
-  display: inline-block;
-}
 
-.info-section {
-  
-}
+
 
 .info-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #f0f0f0;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
 }
 
 .info-item:last-child {
   border-bottom: none;
 }
 
+.info-item:hover {
+  background: rgba(102, 126, 234, 0.02);
+  margin: 0 -20rpx;
+  padding: 24rpx 20rpx;
+  border-radius: 12rpx;
+}
+
+.info-label-container {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.info-icon {
+  font-size: 24rpx;
+  width: 32rpx;
+  text-align: center;
+}
+
 .info-label {
   font-size: 28rpx;
   color: #666;
+  font-weight: 500;
 }
 
 .info-value {
@@ -649,52 +846,146 @@ export default {
   max-width: 400rpx;
   text-align: right;
   word-break: break-all;
+  font-weight: 500;
+}
+
+.user-id-value {
+  max-width: 550rpx;
+  white-space: nowrap;
+  word-break: normal;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.user-id-value:active {
+  color: #007aff;
 }
 
 .stats-card {
   background: white;
-  border-radius: 20rpx;
+  border-radius: 25rpx;
   padding: 40rpx;
+  margin: 0 30rpx 30rpx 30rpx;
+  box-shadow: 0 8rpx 25rpx rgba(102, 126, 234, 0.15);
+  border: 2rpx solid rgba(102, 126, 234, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4rpx;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+.card-title-container {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
   margin-bottom: 30rpx;
-  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.1);
+}
+
+.card-title-icon {
+  font-size: 28rpx;
 }
 
 .card-title {
   font-size: 32rpx;
-  font-weight: bold;
+  font-weight: 600;
   color: #333;
-  margin-bottom: 30rpx;
-  display: block;
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 30rpx;
+  gap: 20rpx;
 }
 
 .stat-item {
   text-align: center;
-  padding: 30rpx;
-  background: #f8f9fa;
-  border-radius: 15rpx;
+  padding: 30rpx 20rpx;
+  border-radius: 20rpx;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.1;
+  border-radius: 20rpx;
+}
+
+.stat-item.total {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  border: 2rpx solid rgba(102, 126, 234, 0.2);
+}
+
+.stat-item.completed {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(139, 195, 74, 0.1));
+  border: 2rpx solid rgba(76, 175, 80, 0.2);
+}
+
+.stat-item.pending {
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 235, 59, 0.1));
+  border: 2rpx solid rgba(255, 193, 7, 0.2);
+}
+
+.stat-item.urgent {
+  background: linear-gradient(135deg, rgba(244, 67, 54, 0.1), rgba(255, 87, 34, 0.1));
+  border: 2rpx solid rgba(244, 67, 54, 0.2);
+}
+
+.stat-item:active {
+  transform: scale(0.95);
+}
+
+.stat-icon {
+  font-size: 32rpx;
+  margin-bottom: 12rpx;
+  display: block;
 }
 
 .stat-number {
   display: block;
   font-size: 48rpx;
-  font-weight: bold;
+  font-weight: 700;
+  margin-bottom: 8rpx;
+}
+
+.stat-item.total .stat-number {
   color: #667eea;
-  margin-bottom: 10rpx;
+}
+
+.stat-item.completed .stat-number {
+  color: #4caf50;
+}
+
+.stat-item.pending .stat-number {
+  color: #ffc107;
+}
+
+.stat-item.urgent .stat-number {
+  color: #f44336;
 }
 
 .stat-label {
   font-size: 24rpx;
   color: #666;
+  font-weight: 500;
 }
 
 .action-section {
-  
+  padding: 0 30rpx 30rpx 30rpx;
 }
 
 .action-btn {
@@ -707,30 +998,32 @@ export default {
   justify-content: center;
   margin-bottom: 20rpx;
   font-size: 32rpx;
-  font-weight: bold;
+  font-weight: 600;
   transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .refresh-btn {
-  background: white;
-  color: #667eea;
-  box-shadow: 0 5rpx 15rpx rgba(102, 126, 234, 0.2);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 8rpx 20rpx rgba(102, 126, 234, 0.3);
 }
 
 .refresh-btn:not(:disabled):active {
   transform: scale(0.98);
-  box-shadow: 0 2rpx 8rpx rgba(102, 126, 234, 0.2);
+  box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.4);
 }
 
 .logout-btn {
-  background: #ff4757;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%);
   color: white;
-  box-shadow: 0 5rpx 15rpx rgba(255, 71, 87, 0.3);
+  box-shadow: 0 8rpx 20rpx rgba(255, 107, 107, 0.3);
 }
 
 .logout-btn:active {
   transform: scale(0.98);
-  background: #ff3742;
+  box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.4);
 }
 
 .btn-icon {
@@ -746,4 +1039,6 @@ export default {
   opacity: 0.6;
   transform: none !important;
 }
+
+
 </style>
