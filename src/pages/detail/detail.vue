@@ -1,29 +1,94 @@
 <template>
   <view class="detail-container">
+    <!-- 背景装饰 -->
+    <view class="background-decoration">
+      <view class="decoration-circle circle-1"></view>
+      <view class="decoration-circle circle-2"></view>
+      <view class="decoration-circle circle-3"></view>
+      <view class="decoration-circle circle-4"></view>
+    </view>
+
     <!-- 详情卡片 -->
     <view class="detail-card">
-      <!-- 关闭按钮 -->
-      <view class="close-btn" @click="goBack">
-        <text class="close-icon">×</text>
+      <!-- 顶部装饰条 -->
+      <view class="card-header">
+        <view class="header-decoration">
+          <view class="decoration-dot dot-1"></view>
+          <view class="decoration-dot dot-2"></view>
+          <view class="decoration-dot dot-3"></view>
+        </view>
+        <view class="close-btn" @click="goBack">
+          <text class="close-icon">✕</text>
+        </view>
       </view>
-      
+
       <!-- 标题区域 -->
       <view class="title-section">
-        <text class="memo-title">{{ memo.title }}</text>
+        <view class="title-header">
+          <view class="title-icon">📝</view>
+          <text class="section-label">标题</text>
+        </view>
+        <view class="title-content">
+          <text class="memo-title">{{ memo.title || '无标题' }}</text>
+        </view>
       </view>
-      
+
       <!-- 内容区域 -->
       <view class="content-section">
-        <text class="memo-content">{{ memo.content }}</text>
+        <view class="content-header">
+          <view class="content-icon">📄</view>
+          <text class="section-label">内容</text>
+          <view class="content-stats">
+            <text class="word-count">{{ getWordCount(memo.content) }} 字</text>
+          </view>
+        </view>
+        <view class="content-wrapper">
+          <text class="memo-content">{{ memo.content || '暂无内容' }}</text>
+        </view>
       </view>
-      
+
+      <!-- 标签区域 -->
+      <view class="tags-section" v-if="memo.tags && memo.tags.length > 0">
+        <view class="tags-header">
+          <view class="tags-icon">🏷️</view>
+          <text class="section-label">标签</text>
+        </view>
+        <view class="tags-list">
+          <view
+            class="tag-item"
+            v-for="tag in memo.tags"
+            :key="tag"
+          >
+            {{ tag }}
+          </view>
+        </view>
+      </view>
+
       <!-- 时间信息 -->
       <view class="time-section">
-        <text class="time-label">创建时间：{{ formatTime(memo.createTime) }}</text>
-        <text class="time-label">更新时间：{{ formatTime(memo.updateTime) }}</text>
+        <view class="time-header">
+          <view class="time-icon">⏰</view>
+          <text class="section-label">时间信息</text>
+        </view>
+        <view class="time-list">
+          <view class="time-item">
+            <view class="time-item-icon">📅</view>
+            <view class="time-item-content">
+              <text class="time-label">创建时间</text>
+              <text class="time-value">{{ formatTime(memo.createTime) }}</text>
+            </view>
+          </view>
+          <view class="time-item">
+            <view class="time-item-icon">🔄</view>
+            <view class="time-item-content">
+              <text class="time-label">更新时间</text>
+              <text class="time-value">{{ formatTime(memo.updateTime) }}</text>
+            </view>
+          </view>
+        </view>
       </view>
     </view>
-    
+
     <!-- 底部操作按钮 -->
     <view class="action-buttons">
       <button
@@ -32,8 +97,10 @@
         @click="goToEdit"
         :disabled="editLoading || deleteLoading"
       >
-        <text class="btn-icon">{{ editLoading ? '⏳' : '✏️' }}</text>
-        <text class="btn-text">{{ editLoading ? '加载中...' : '修改' }}</text>
+        <view class="btn-content">
+          <text class="btn-icon">{{ editLoading ? '⏳' : '✏️' }}</text>
+          <text class="btn-text">{{ editLoading ? '加载中...' : '编辑' }}</text>
+        </view>
       </button>
       <button
         class="action-btn delete-btn"
@@ -41,8 +108,10 @@
         @click="deleteMemo"
         :disabled="editLoading || deleteLoading"
       >
-        <text class="btn-icon">{{ deleteLoading ? '⏳' : '🗑️' }}</text>
-        <text class="btn-text">{{ deleteLoading ? '删除中...' : '删除' }}</text>
+        <view class="btn-content">
+          <text class="btn-icon">{{ deleteLoading ? '⏳' : '🗑️' }}</text>
+          <text class="btn-text">{{ deleteLoading ? '删除中...' : '删除' }}</text>
+        </view>
       </button>
     </view>
   </view>
@@ -270,6 +339,13 @@ export default {
       }
     },
 
+    // 获取字数统计
+    getWordCount(content) {
+      if (!content) return 0;
+      // 移除空白字符后计算长度
+      return content.replace(/\s/g, '').length;
+    },
+
     // 格式化时间
     formatTime(timeStr) {
       try {
@@ -280,7 +356,7 @@ export default {
         // 检查日期是否有效
         if (isNaN(date.getTime())) {
           console.error('无效的时间格式:', timeStr);
-          return timeStr;
+          return '时间格式错误';
         }
 
         // 如果API返回的是UTC时间但服务器时区有问题，手动调整
@@ -307,7 +383,7 @@ export default {
 
       } catch (error) {
         console.error('时间格式化错误:', error, '原始时间:', timeStr);
-        return timeStr;
+        return '时间解析失败';
       }
     }
   }
@@ -315,9 +391,10 @@ export default {
 </script>
 
 <style scoped>
+/* 容器样式 */
 .detail-container {
   min-height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(124, 142, 240, 0.1) 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -329,6 +406,57 @@ export default {
   right: 0;
   bottom: 0;
   z-index: 999;
+  overflow-y: auto;
+}
+
+/* 背景装饰 */
+.background-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.decoration-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(124, 142, 240, 0.1));
+  animation: float 8s ease-in-out infinite;
+}
+
+.circle-1 {
+  width: 200rpx;
+  height: 200rpx;
+  top: 10%;
+  right: 10%;
+  animation-delay: 0s;
+}
+
+.circle-2 {
+  width: 150rpx;
+  height: 150rpx;
+  top: 60%;
+  left: 5%;
+  animation-delay: 2s;
+}
+
+.circle-3 {
+  width: 100rpx;
+  height: 100rpx;
+  top: 30%;
+  left: 15%;
+  animation-delay: 4s;
+}
+
+.circle-4 {
+  width: 120rpx;
+  height: 120rpx;
+  bottom: 20%;
+  right: 20%;
+  animation-delay: 6s;
 }
 
 /* 兼容微信小程序 */
@@ -341,89 +469,236 @@ page {
 /* 详情卡片 */
 .detail-card {
   width: 100%;
-  max-width: 650rpx;
-  background-color: #fff;
-  border-radius: 20rpx;
-  padding: 50rpx 40rpx 40rpx;
+  max-width: 680rpx;
+  background: white;
+  border-radius: 24rpx;
+  padding: 0;
   position: relative;
-  max-height: 75vh;
-  overflow-y: auto;
-  box-shadow: 0 15rpx 40rpx rgba(0, 0, 0, 0.3);
-  border: 3rpx solid #ddd;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.15);
+  border: 1rpx solid rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10rpx);
 }
+
+/* 卡片头部 */
+.card-header {
+  position: relative;
+  padding: 30rpx 30rpx 20rpx;
+  background: linear-gradient(135deg, #667eea 0%, #7c8ef0 100%);
+  border-radius: 24rpx 24rpx 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-decoration {
+  display: flex;
+  gap: 8rpx;
+  align-items: center;
+}
+
+.decoration-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.dot-1 { animation: pulse 2s ease-in-out infinite; }
+.dot-2 { animation: pulse 2s ease-in-out infinite 0.5s; }
+.dot-3 { animation: pulse 2s ease-in-out infinite 1s; }
 
 /* 关闭按钮 */
 .close-btn {
-  position: absolute;
-  top: 25rpx;
-  right: 25rpx;
-  width: 70rpx;
-  height: 70rpx;
+  width: 60rpx;
+  height: 60rpx;
   border-radius: 50%;
-  background-color: #f8f8f8;
-  border: 2rpx solid #ddd;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2rpx solid rgba(255, 255, 255, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10rpx);
 }
 
 .close-btn:active {
-  background-color: #e8e8e8;
+  background: rgba(255, 255, 255, 0.3);
   transform: scale(0.95);
 }
 
 .close-icon {
-  font-size: 40rpx;
-  color: #666;
-  font-weight: bold;
+  font-size: 28rpx;
+  color: white;
+  font-weight: 600;
   line-height: 1;
 }
 
+/* 滚动内容区域 */
+.detail-card {
+  overflow-y: auto;
+}
+
+.detail-card::-webkit-scrollbar {
+  width: 4rpx;
+}
+
+.detail-card::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2rpx;
+}
+
+.detail-card::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 2rpx;
+}
+
+.detail-card::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 通用区域样式 */
+.title-section,
+.content-section,
+.tags-section,
+.time-section {
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.time-section {
+  border-bottom: none;
+}
+
+/* 区域头部样式 */
+.title-header,
+.content-header,
+.tags-header,
+.time-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.title-icon,
+.content-icon,
+.tags-icon,
+.time-icon {
+  font-size: 24rpx;
+  margin-right: 12rpx;
+}
+
+.section-label {
+  flex: 1;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #333;
+}
+
 /* 标题区域 */
-.title-section {
-  margin-bottom: 40rpx;
-  padding-right: 100rpx; /* 为关闭按钮留出空间 */
-  border-bottom: 2rpx solid #f0f0f0;
-  padding-bottom: 30rpx;
+.title-content {
+  padding: 20rpx;
+  background: #f8f9ff;
+  border-radius: 12rpx;
+  border-left: 4rpx solid #667eea;
 }
 
 .memo-title {
-  font-size: 40rpx;
-  font-weight: bold;
+  font-size: 32rpx;
+  font-weight: 600;
   color: #333;
-  line-height: 1.3;
+  line-height: 1.4;
   word-break: break-all;
 }
 
 /* 内容区域 */
-.content-section {
-  margin-bottom: 40rpx;
-  flex: 1;
+.content-stats {
+  display: flex;
+  align-items: center;
+}
+
+.word-count {
+  font-size: 22rpx;
+  color: #999;
+  background: #f0f0f0;
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+}
+
+.content-wrapper {
+  padding: 20rpx;
+  background: #f8f9ff;
+  border-radius: 12rpx;
+  border-left: 4rpx solid #7c8ef0;
+  min-height: 120rpx;
 }
 
 .memo-content {
-  font-size: 30rpx;
+  font-size: 28rpx;
   color: #555;
-  line-height: 1.7;
+  line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-all;
-  text-align: justify;
+}
+
+/* 标签区域 */
+.tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.tag-item {
+  background: linear-gradient(135deg, #667eea, #7c8ef0);
+  color: white;
+  font-size: 22rpx;
+  font-weight: 500;
+  padding: 8rpx 16rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 8rpx rgba(102, 126, 234, 0.3);
 }
 
 /* 时间信息 */
-.time-section {
-  border-top: 1rpx solid #e5e5e5;
-  padding-top: 20rpx;
-  margin-bottom: 20rpx;
+.time-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.time-item {
+  display: flex;
+  align-items: center;
+  padding: 16rpx;
+  background: #f8f9ff;
+  border-radius: 12rpx;
+  border-left: 4rpx solid #a8b5ff;
+}
+
+.time-item-icon {
+  font-size: 24rpx;
+  margin-right: 16rpx;
+  width: 40rpx;
+  text-align: center;
+}
+
+.time-item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
 }
 
 .time-label {
-  display: block;
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #999;
-  margin-bottom: 8rpx;
+  font-weight: 500;
+}
+
+.time-value {
+  font-size: 26rpx;
+  color: #333;
+  font-weight: 600;
 }
 
 /* 底部操作按钮 */
@@ -431,99 +706,76 @@ page {
   display: flex;
   gap: 20rpx;
   margin-top: 30rpx;
-  padding: 0 20rpx;
+  padding: 0 40rpx;
 }
 
 .action-btn {
   flex: 1;
   height: 88rpx;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   border: none;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+}
+
+.btn-content {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12rpx;
-  font-size: 28rpx;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  height: 100%;
   position: relative;
-  overflow: hidden;
-}
-
-.action-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
-  transform: translateX(-100%);
-  transition: transform 0.6s ease;
-}
-
-.action-btn:active::before {
-  transform: translateX(100%);
-}
-
-.edit-btn {
-  background: linear-gradient(135deg, #007aff 0%, #0056d3 100%);
-  color: #fff;
-}
-
-.edit-btn:hover {
-  background: linear-gradient(135deg, #0056d3 0%, #003d99 100%);
-  transform: translateY(-2rpx);
-  box-shadow: 0 8rpx 20rpx rgba(0, 122, 255, 0.3);
-}
-
-.delete-btn {
-  background: linear-gradient(135deg, #ff4757 0%, #d63031 100%);
-  color: #fff;
-}
-
-.delete-btn:hover {
-  background: linear-gradient(135deg, #d63031 0%, #b71c1c 100%);
-  transform: translateY(-2rpx);
-  box-shadow: 0 8rpx 20rpx rgba(255, 71, 87, 0.3);
-}
-
-.action-btn:active {
-  transform: translateY(2rpx);
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+  z-index: 2;
 }
 
 .btn-icon {
-  font-size: 32rpx;
+  font-size: 28rpx;
   line-height: 1;
-  transition: transform 0.3s ease;
 }
 
 .btn-text {
   font-size: 28rpx;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1;
-  transition: transform 0.3s ease;
 }
 
-.action-btn:hover .btn-icon {
-  transform: scale(1.1);
+/* 编辑按钮 */
+.edit-btn {
+  background: linear-gradient(135deg, #667eea 0%, #7c8ef0 100%);
+  color: white;
+  box-shadow: 0 4rpx 16rpx rgba(102, 126, 234, 0.4);
 }
 
-.action-btn:hover .btn-text {
-  transform: translateX(2rpx);
-}
-
-.action-btn:active .btn-icon {
+.edit-btn:active {
   transform: scale(0.95);
+  box-shadow: 0 2rpx 8rpx rgba(102, 126, 234, 0.5);
 }
 
-.action-btn:active .btn-text {
-  transform: translateX(0);
+.edit-btn .btn-text,
+.edit-btn .btn-icon {
+  color: white !important;
 }
 
-/* 添加按钮加载状态和禁用状态 */
+/* 删除按钮 */
+.delete-btn {
+  background: linear-gradient(135deg, #ff4757 0%, #d63031 100%);
+  color: white;
+  box-shadow: 0 4rpx 16rpx rgba(255, 71, 87, 0.4);
+}
+
+.delete-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 2rpx 8rpx rgba(255, 71, 87, 0.5);
+}
+
+.delete-btn .btn-text,
+.delete-btn .btn-icon {
+  color: white !important;
+}
+
+/* 按钮加载状态和禁用状态 */
 .action-btn.loading,
 .action-btn:disabled {
   pointer-events: none;
@@ -532,21 +784,69 @@ page {
 }
 
 .action-btn.loading .btn-icon {
-  animation: rotate 1s linear infinite;
+  animation: spin 1s linear infinite;
 }
 
 .action-btn:disabled {
-  background: #ccc !important;
-  color: #999 !important;
+  background: #cccccc !important;
+  color: #999999 !important;
   box-shadow: none !important;
 }
 
-@keyframes rotate {
+.action-btn:disabled .btn-text,
+.action-btn:disabled .btn-icon {
+  color: #999999 !important;
+}
+
+/* 动画效果 */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20rpx);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes spin {
   from {
     transform: rotate(0deg);
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* 响应式适配 */
+@media (max-width: 750rpx) {
+  .detail-container {
+    padding: 40rpx 30rpx;
+  }
+
+  .detail-card {
+    max-width: 100%;
+  }
+
+  .action-buttons {
+    padding: 0 30rpx;
+  }
+
+  .title-section,
+  .content-section,
+  .tags-section,
+  .time-section {
+    padding: 25rpx;
   }
 }
 </style>

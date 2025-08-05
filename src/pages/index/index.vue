@@ -1,5 +1,19 @@
 <template>
   <view class="container">
+    <!-- 顶部装饰区域 -->
+    <view class="header-section">
+      <view class="header-decoration">
+        <view class="decoration-circle circle-1"></view>
+        <view class="decoration-circle circle-2"></view>
+        <view class="decoration-circle circle-3"></view>
+      </view>
+      <view class="header-content">
+        <view class="header-icon">📝</view>
+        <text class="header-title">我的备忘录</text>
+        <text class="header-subtitle">记录生活的每一个瞬间</text>
+      </view>
+    </view>
+
     <!-- 搜索框 -->
     <view class="search-container">
       <view class="search-box">
@@ -25,13 +39,15 @@
     <view class="memo-grid">
       <!-- 空状态 -->
       <view v-if="filteredMemos.length === 0 && !searchKeyword" class="empty-state">
+        <view class="empty-icon">📝</view>
         <text class="empty-text">暂无备忘录</text>
-        <text class="empty-tip">点击右下角 + 号添加第一个备忘录</text>
+        <text class="empty-tip">点击右下角 ✨ 号添加第一个备忘录</text>
       </view>
 
       <!-- 搜索无结果状态 -->
       <view v-else-if="filteredMemos.length === 0 && searchKeyword" class="empty-state">
-        <text class="empty-text">🔍 未找到相关备忘录</text>
+        <view class="empty-icon">🔍</view>
+        <text class="empty-text">未找到相关备忘录</text>
         <text class="empty-tip">尝试使用其他关键词搜索</text>
       </view>
 
@@ -44,15 +60,26 @@
           @click="goToDetail(memo.id)"
         >
           <view class="card-header">
-            <text class="card-title">{{ memo.title }}</text>
+            <view class="card-title-container">
+              <view class="card-icon">📄</view>
+              <text class="card-title">{{ memo.title }}</text>
+            </view>
           </view>
           <view class="card-content">
             <text class="card-text">{{ memo.content }}</text>
           </view>
           <view class="card-footer">
             <view class="time-info">
-              <text class="update-time">{{ formatTime(memo.updateTime) }}</text>
-              <text class="time-label" v-if="memo.createTime !== memo.updateTime">已修改</text>
+              <view class="time-container">
+                <view class="time-icon">🕒</view>
+                <text class="update-time">{{ formatTime(memo.updateTime) }}</text>
+              </view>
+              <view class="status-container">
+                <text class="time-label" v-if="memo.createTime !== memo.updateTime">
+                  <view class="edit-icon">✏️</view>
+                  已修改
+                </text>
+              </view>
             </view>
           </view>
         </view>
@@ -66,7 +93,7 @@
 
     <!-- 悬浮添加按钮 -->
     <view class="floating-add-btn" @click="goToAdd">
-      <text class="add-icon">+</text>
+      <text class="add-icon">✨</text>
     </view>
   </view>
 </template>
@@ -356,9 +383,108 @@ export default {
 <style scoped>
 .container {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   position: relative;
   padding: 0;
+}
+
+/* 顶部装饰区域 */
+.header-section {
+  position: relative;
+  padding: 60rpx 40rpx 40rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 0 0 50rpx 50rpx;
+  margin-bottom: 30rpx;
+  overflow: hidden;
+}
+
+.header-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.decoration-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  animation: float 6s ease-in-out infinite;
+}
+
+.circle-1 {
+  width: 120rpx;
+  height: 120rpx;
+  top: 20rpx;
+  right: 60rpx;
+  animation-delay: 0s;
+}
+
+.circle-2 {
+  width: 80rpx;
+  height: 80rpx;
+  top: 120rpx;
+  right: 200rpx;
+  animation-delay: 2s;
+}
+
+.circle-3 {
+  width: 60rpx;
+  height: 60rpx;
+  top: 60rpx;
+  left: 80rpx;
+  animation-delay: 4s;
+}
+
+.header-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.header-icon {
+  font-size: 60rpx;
+  margin-bottom: 20rpx;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+.header-title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 10rpx;
+}
+
+.header-subtitle {
+  display: block;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 浮动动画 */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20rpx) rotate(180deg);
+  }
+}
+
+/* 弹跳动画 */
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10rpx);
+  }
+  60% {
+    transform: translateY(-5rpx);
+  }
 }
 
 /* 搜索框样式 */
@@ -366,18 +492,26 @@ export default {
   position: sticky;
   top: 0;
   z-index: 100;
-  background-color: #f5f5f5;
-  padding: 20rpx 30rpx 10rpx 30rpx;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 20rpx 30rpx 20rpx 30rpx;
 }
 
 .search-box {
   display: flex;
   align-items: center;
-  background-color: white;
+  background: white;
   border-radius: 50rpx;
   padding: 0 30rpx;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4rpx 20rpx rgba(102, 126, 234, 0.15);
   height: 80rpx;
+  border: 2rpx solid rgba(102, 126, 234, 0.1);
+  transition: all 0.3s ease;
+}
+
+.search-box:focus-within {
+  box-shadow: 0 6rpx 25rpx rgba(102, 126, 234, 0.25);
+  border-color: rgba(102, 126, 234, 0.3);
+  transform: translateY(-2rpx);
 }
 
 .search-icon {
@@ -428,20 +562,32 @@ export default {
 /* 空状态样式 */
 .empty-state {
   text-align: center;
-  padding: 200rpx 0;
+  padding: 120rpx 40rpx;
+  background: white;
+  border-radius: 30rpx;
+  margin: 40rpx 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 30rpx;
+  animation: bounce 2s ease-in-out infinite;
 }
 
 .empty-text {
   display: block;
   font-size: 32rpx;
-  color: #999;
+  color: #666;
   margin-bottom: 20rpx;
+  font-weight: 500;
 }
 
 .empty-tip {
   display: block;
-  font-size: 24rpx;
-  color: #ccc;
+  font-size: 26rpx;
+  color: #999;
+  line-height: 1.5;
 }
 
 /* 网格容器 */
@@ -454,50 +600,77 @@ export default {
 
 /* 备忘录卡片样式 */
 .memo-card {
-  background-color: #fff;
-  border-radius: 16rpx;
-  padding: 24rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-  border: 2rpx solid #e5e5e5;
-  min-height: 200rpx;
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  box-shadow: 0 6rpx 20rpx rgba(102, 126, 234, 0.12);
+  border: 2rpx solid rgba(102, 126, 234, 0.08);
+  min-height: 220rpx;
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.memo-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4rpx;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
 }
 
 .memo-card:active {
-  transform: scale(0.95);
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+  transform: translateY(-4rpx) scale(0.98);
+  box-shadow: 0 8rpx 25rpx rgba(102, 126, 234, 0.2);
 }
 
 /* 卡片头部 */
 .card-header {
-  margin-bottom: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.card-title-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 12rpx;
+}
+
+.card-icon {
+  font-size: 24rpx;
+  margin-top: 4rpx;
+  flex-shrink: 0;
 }
 
 .card-title {
-  font-size: 28rpx;
-  font-weight: bold;
+  font-size: 30rpx;
+  font-weight: 600;
   color: #333;
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  flex: 1;
 }
 
 /* 卡片内容 */
 .card-content {
   flex: 1;
-  margin-bottom: 16rpx;
+  margin-bottom: 20rpx;
 }
 
 .card-text {
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: #666;
-  line-height: 1.5;
+  line-height: 1.6;
   display: -webkit-box;
   -webkit-line-clamp: 4;
+  line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -505,28 +678,51 @@ export default {
 /* 卡片底部 */
 .card-footer {
   margin-top: auto;
+  border-top: 1rpx solid rgba(0, 0, 0, 0.05);
+  padding-top: 16rpx;
 }
 
 .time-info {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8rpx;
+  gap: 12rpx;
 }
 
-.update-time {
-  font-size: 20rpx;
-  color: #999;
+.time-container {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
   flex: 1;
 }
 
+.time-icon {
+  font-size: 20rpx;
+}
+
+.update-time {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.status-container {
+  flex-shrink: 0;
+}
+
 .time-label {
-  font-size: 18rpx;
-  color: #007aff;
-  background-color: rgba(0, 122, 255, 0.1);
-  padding: 2rpx 8rpx;
-  border-radius: 8rpx;
-  border: 1rpx solid rgba(0, 122, 255, 0.2);
+  font-size: 20rpx;
+  color: #667eea;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  padding: 6rpx 12rpx;
+  border-radius: 12rpx;
+  border: 1rpx solid rgba(102, 126, 234, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.edit-icon {
+  font-size: 16rpx;
 }
 
 /* 悬浮用户信息按钮 */
@@ -534,16 +730,17 @@ export default {
   position: fixed;
   left: 40rpx;
   bottom: 40rpx;
-  width: 100rpx;
-  height: 100rpx;
-  background-color: #667eea;
+  width: 110rpx;
+  height: 110rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 20rpx rgba(102, 126, 234, 0.3);
+  box-shadow: 0 10rpx 30rpx rgba(102, 126, 234, 0.4);
   z-index: 999;
   transition: all 0.3s ease;
+  animation: pulse-user 3s ease-in-out infinite;
 }
 
 .floating-user-btn:active {
@@ -551,7 +748,7 @@ export default {
 }
 
 .user-icon {
-  font-size: 40rpx;
+  font-size: 44rpx;
   color: #fff;
   line-height: 1;
 }
@@ -561,16 +758,17 @@ export default {
   position: fixed;
   right: 40rpx;
   bottom: 40rpx;
-  width: 100rpx;
-  height: 100rpx;
-  background-color: #007aff;
+  width: 110rpx;
+  height: 110rpx;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 20rpx rgba(0, 122, 255, 0.3);
+  box-shadow: 0 10rpx 30rpx rgba(255, 107, 107, 0.4);
   z-index: 999;
   transition: all 0.3s ease;
+  animation: pulse-add 3s ease-in-out infinite;
 }
 
 .floating-add-btn:active {
@@ -578,10 +776,29 @@ export default {
 }
 
 .add-icon {
-  font-size: 48rpx;
+  font-size: 44rpx;
   color: #fff;
   font-weight: bold;
   line-height: 1;
+}
+
+/* 悬浮按钮脉冲动画 */
+@keyframes pulse-user {
+  0%, 100% {
+    box-shadow: 0 10rpx 30rpx rgba(102, 126, 234, 0.4);
+  }
+  50% {
+    box-shadow: 0 15rpx 40rpx rgba(102, 126, 234, 0.6);
+  }
+}
+
+@keyframes pulse-add {
+  0%, 100% {
+    box-shadow: 0 10rpx 30rpx rgba(255, 107, 107, 0.4);
+  }
+  50% {
+    box-shadow: 0 15rpx 40rpx rgba(255, 107, 107, 0.6);
+  }
 }
 
 /* 响应式调整 */
